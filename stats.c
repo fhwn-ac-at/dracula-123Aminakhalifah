@@ -2,32 +2,47 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * Initializes the statistics structure by resetting all counters.
+ *
+ * @param stats Pointer to the Stats structure to initialize.
+ */
 void stats_init(Stats* stats) {
     if (!stats) return;
 
+    // Set all ladder and snake hit counters to zero
     memset(stats->snake_hits, 0, sizeof(stats->snake_hits));
     memset(stats->ladder_hits, 0, sizeof(stats->ladder_hits));
     stats->total_games = 0;
 }
 
+/**
+ * Updates the statistics based on a completed (won) game.
+ * This function counts how many times each snake or ladder was used.
+ *
+ * @param board Pointer to the game board.
+ * @param result Pointer to the result of a single game.
+ * @param stats Pointer to the Stats structure to update.
+ */
 void stats_update(const Board* board, const GameResult* result, Stats* stats) {
     if (!board || !result || !stats || !result->won) return;
 
     int position = 1;
+
     for (int i = 0; i < result->move_count; i++) {
         int roll = result->moves[i];
         int next = position + roll;
 
+        // If the move overshoots the board, ignore it
         if (next > board->size) {
-            // تجاوزنا اللوح، لا نتحرك
             next = position;
         }
 
-        // تحقق مما إذا كان هناك سلم أو ثعبان
+        // Check if there's a jump (snake or ladder)
         int jumped = board_apply_jump(board, next);
 
         if (jumped != next) {
-            // تحقق هل هو سلم أم ثعبان؟
+            // Determine if it was a snake
             for (int j = 0; j < board->num_snakes; j++) {
                 if (board->snakes[j].start == next && board->snakes[j].end == jumped) {
                     stats->snake_hits[j]++;
@@ -35,6 +50,7 @@ void stats_update(const Board* board, const GameResult* result, Stats* stats) {
                 }
             }
 
+            // Determine if it was a ladder
             for (int j = 0; j < board->num_ladders; j++) {
                 if (board->ladders[j].start == next && board->ladders[j].end == jumped) {
                     stats->ladder_hits[j]++;
@@ -51,6 +67,12 @@ void stats_update(const Board* board, const GameResult* result, Stats* stats) {
     stats->total_games++;
 }
 
+/**
+ * Prints out statistics about how often each snake and ladder was used.
+ *
+ * @param board Pointer to the game board.
+ * @param stats Pointer to the Stats structure containing usage data.
+ */
 void stats_print(const Board* board, const Stats* stats) {
     if (!board || !stats) return;
 
